@@ -341,7 +341,10 @@ munis=["101","102","103","104","105","106","107","108","109",
 def parse_page(soup):
     records = []
     # because nested tables
+    #print(soup)
+    #print(soup.find_all('table', id='ctl00_ContentPlaceHolder1_gvFSO'))
     for table in soup.find_all('table', id='ctl00_ContentPlaceHolder1_gvFSO'):
+        print("Table found!")
         # Only the table with the data seems to have an id?
         # Yes, why this and that? -- historical, one works sometimes and
         #      the other doesn't :-\
@@ -353,6 +356,8 @@ def parse_page(soup):
         # The page links are in the same table...because why not?
         pages = find_pages(table)
         return (pages, records)
+    print(soup)
+    print("No Table Found")
     return (None, None)
 
 def find_pages(table):
@@ -383,8 +388,11 @@ with open('places.csv', 'w') as csvfile:
             form_fields['ctl00$ContentPlaceHolder1$ScriptManager1'] = "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTARGUMENT'] = page
-            print(page)
-            #form_fields['__ASYNCPOST'] = "true"
+            # These both are being sent when I inspect the POST in FF
+            # but cause a 500 to be returned
+            form_fields['__ASYNCPOST'] = "true"
+            headers['X-MicrosoftAjax'] = "Delta=true"
+            print(repr(page))
             soup = a.post(url, form_fields)
             pages, records = parse_page(soup)
             if records is None:
