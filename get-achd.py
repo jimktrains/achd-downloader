@@ -353,6 +353,7 @@ def parse_page(soup):
         # The page links are in the same table...because why not?
         pages = find_pages(table)
         return (pages, records)
+    return (None, None)
 
 def find_pages(table):
     pages = []
