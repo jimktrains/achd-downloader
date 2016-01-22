@@ -192,6 +192,7 @@
 # </tbody></table>
 
 
+import csv
 import copy
 from bs4 import BeautifulSoup
 import httplib2
@@ -364,17 +365,31 @@ def find_pages(table):
         if 'Page' in page:
             pages.append(page)
     return pages
-for muni in munis:
-    form_fields = copy.deepcopy(form_fields_orig)
-    form_fields['ctl00$ContentPlaceHolder1$ddlMuni'] = muni
-    print("Getting muni " + muni);
-    soup = a.post(url, form_fields)
-    pages, records = parse_page(soup)
-    for page in pages:
-        form_fields['__EVENTTARGET'] = 'ctl00$ContentPlaceHolder1$gvFSO'
-        form_fields['__EVENTARGUMENT'] = page
+with open('places.csv', 'w') as csvfile:
+    fieldnames = ['name', 'street_number', 'street_name', 'city', 'zipcode']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for muni in munis:
+        form_fields = copy.deepcopy(form_fields_orig)
+        form_fields['ctl00$ContentPlaceHolder1$ddlMuni'] = muni
+        print("Getting muni " + muni);
         soup = a.post(url, form_fields)
-        pages, page_records = parse_page(soup)
-        records = records + page_records
-    print(len(records))
-    sys.exit(0)
+        pages, records = parse_page(soup)
+        for record in records:
+            writer.writerow(record)
+        for page in pages:
+            form_fields['ctl00$ContentPlaceHolder1$ScriptManager1'] = "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$gvFSO"
+            form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
+            form_fields['__EVENTARGUMENT'] = page
+            print(form_fields)
+            #form_fields['__ASYNCPOST'] = "true"
+            soup = a.post(url, form_fields)
+            pages, records = parse_page(soup)
+            if records is None:
+                print("No records returned")
+                continue
+            for record in records:
+                writer.writerow(record)
+        print(len(records))
+        sys.exit(0)
