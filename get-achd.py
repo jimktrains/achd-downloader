@@ -382,7 +382,7 @@ with open('places.csv', 'w') as csvfile:
             form_fields['ctl00$ContentPlaceHolder1$ScriptManager1'] = "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTARGUMENT'] = page
-            print(form_fields)
+            print(page)
             #form_fields['__ASYNCPOST'] = "true"
             soup = a.post(url, form_fields)
             pages, records = parse_page(soup)
