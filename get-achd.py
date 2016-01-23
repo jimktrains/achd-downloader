@@ -312,7 +312,16 @@ class ASPState:
         soup = self.bs(content);
         return soup
     def post(self, url, data):
-        data.update(self.asp_hidden_inputs.copy())
+        d2 = self.asp_hidden_inputs.copy()
+        d2.update(data)
+        data = d2
+        for k in data:
+            if k == '__EVENTTARGET' or k == '__EVENTARGUMENT':
+                print(k + "\t" + data[k])
+            elif k[0] == '_':
+                print(k)
+            else:
+                print(k + "\t" + data[k])
         resp, content = self.h.request(url, "POST", urlencode(data), headers)
         soup = self.bs(content)
         return soup
@@ -330,9 +339,6 @@ form_fields_orig = {
     'ctl00$ContentPlaceHolder1$ddlMuni':'901',
     'ctl00$ContentPlaceHolder1$ddlPlacard':'*',
     'ctl00$ContentPlaceHolder1$btnFind':'Find',
-    '__LASTFOCUS':'',
-    '__EVENTTARGET':'',
-    '__EVENTARGUMENT':''
 }
 
 
@@ -357,8 +363,6 @@ munis=["101","102","103","104","105","106","107","108","109",
 def parse_page(soup):
     records = []
     # because nested tables
-    #print(soup)
-    #print(soup.find_all('table', id='ctl00_ContentPlaceHolder1_gvFSO'))
     for table in soup.find_all('table', id='ctl00_ContentPlaceHolder1_gvFSO'):
         print("Table found!")
         # Only the table with the data seems to have an id?
@@ -405,19 +409,17 @@ with open('places.csv', 'w') as csvfile:
             form_fields['ctl00$ContentPlaceHolder1$ScriptManager1'] = "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTARGUMENT'] = page
-            # These both are being sent when I inspect the POST in FF
-            # but cause a 500 to be returned
             form_fields['__ASYNCPOST'] = "true"
             headers['X-MicrosoftAjax'] = "Delta=true"
             headers['Referer'] = "http://webapps.achd.net/Restaurant/RestaurantSearch.aspx"
-            print(repr(page))
             soup = a.post(url, form_fields)
             pages, records = parse_page(soup)
             if records is not None:
                 print(len(records))
-            sys.exit(0)
-            if records is None:
+                print(records[-1])
+                for record in records:
+                    writer.writerow(record)
+            else:
                 print("No records returned")
                 continue
-            for record in records:
-                writer.writerow(record)
+        sys.exit(0)
