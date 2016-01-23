@@ -283,13 +283,25 @@ class ASPState:
         self.get(start_url)
 
     def get_hidden(self, soup):
-        for hidden in soup.find_all('input', type='hidden'):
-            if '_' == hidden['name'][0]:
-                print(hidden['name'] + " => ")
-                if hidden['name'] in self.asp_hidden_inputs:
-                    if self.asp_hidden_inputs[hidden['name']] == hidden['value']:
-                        print("\tSame")
-                self.asp_hidden_inputs[hidden['name']] = hidden['value']
+        if self.asp_hidden_inputs != {}:
+            self.asp_hidden_inputs = {}
+        self.asp_hidden_inputs = {}
+        if "|" in str(soup)[0:10]:
+            # oi, really, ASP.NET is something else. Seriously, just
+            # use links and reload the page like normal people. Holy crap,
+            # why make things so complicatd
+            rest = str(soup)
+            while len(rest) != 0:
+                part_size, part_type, part_name, value, rest = rest.split("|", 4)
+                part_size = int(part_size)
+                if part_type == 'hiddenField':
+                    print("Setting " + part_name)
+                    self.asp_hidden_inputs[part_name] = value
+        else:
+            for hidden in soup.find_all('input', type='hidden'):
+                if '_' == hidden['name'][0]:
+                    print("Setting " + hidden['name'])
+                    self.asp_hidden_inputs[hidden['name']] = hidden['value']
     def bs(self, content):
         str_content = content.decode('utf-8')
         soup = BeautifulSoup(str_content, 'html.parser')
