@@ -271,7 +271,7 @@ def extract_record(row):
 
 
 headers = {
-    'HTTP_USER_AGENT': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.13) Gecko/2009073022 Firefox/3.0.13',
+    'HTTP_USER_AGENT': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0',
     'HTTP_ACCEPT': 'text/html,application/xhtml+xml,application/xml; q=0.9,*/*; q=0.8',
     'Content-Type': 'application/x-www-form-urlencoded'
 }
@@ -285,6 +285,10 @@ class ASPState:
     def get_hidden(self, soup):
         for hidden in soup.find_all('input', type='hidden'):
             if '_' == hidden['name'][0]:
+                print(hidden['name'] + " => ")
+                if hidden['name'] in self.asp_hidden_inputs:
+                    if self.asp_hidden_inputs[hidden['name']] == hidden['value']:
+                        print("\tSame")
                 self.asp_hidden_inputs[hidden['name']] = hidden['value']
     def bs(self, content):
         str_content = content.decode('utf-8')
@@ -385,6 +389,7 @@ with open('places.csv', 'w') as csvfile:
         for record in records:
             writer.writerow(record)
         for page in pages:
+            print()
             form_fields['ctl00$ContentPlaceHolder1$ScriptManager1'] = "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTARGUMENT'] = page
@@ -392,13 +397,15 @@ with open('places.csv', 'w') as csvfile:
             # but cause a 500 to be returned
             form_fields['__ASYNCPOST'] = "true"
             headers['X-MicrosoftAjax'] = "Delta=true"
+            headers['Referer'] = "http://webapps.achd.net/Restaurant/RestaurantSearch.aspx"
             print(repr(page))
             soup = a.post(url, form_fields)
             pages, records = parse_page(soup)
+            if records is not None:
+                print(len(records))
+            sys.exit(0)
             if records is None:
                 print("No records returned")
                 continue
             for record in records:
                 writer.writerow(record)
-        print(len(records))
-        sys.exit(0)
