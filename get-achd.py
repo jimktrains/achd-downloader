@@ -81,7 +81,6 @@ def extract_record(row):
 headers = {
     # Because requiring a browser's user agenet will stop bots
     'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36',#'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:43.0) Gecko/20100101 Firefox/43.0',
-    #'Accept': 'text/html,application/xhtml+xml,application/xml; q=0.9,*/*; q=0.8',
     'Content-Type': 'application/x-www-form-urlencoded'
 }
 
@@ -210,12 +209,8 @@ with open('places.csv', 'w') as csvfile:
         for page in pages:
             print()
             print("Page:\t" + page)
-            #form_fields['ctl00$ContentPlaceHolder1$ScriptManager1'] = "ctl00$ContentPlaceHolder1$UpdatePanel1|ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
             form_fields['__EVENTARGUMENT'] = page
-            #form_fields['__ASYNCPOST'] = "true"
-            #headers['X-MicrosoftAjax'] = "Delta=true"
-            #headers['Referer'] = "http://webapps.achd.net/Restaurant/RestaurantSearch.aspx"
             soup = a.post(url, form_fields)
             pages, records = parse_page(soup)
             if records is not None:
