@@ -295,12 +295,10 @@ class ASPState:
                 part_size, part_type, part_name, value, rest = rest.split("|", 4)
                 part_size = int(part_size)
                 if part_type == 'hiddenField':
-                    #print("Setting " + part_name)
                     self.asp_hidden_inputs[part_name] = value
         else:
             for hidden in soup.find_all('input', type='hidden'):
                 if '_' == hidden['name'][0]:
-                    #print("Setting " + hidden['name'])
                     self.asp_hidden_inputs[hidden['name']] = hidden['value']
     def bs(self, content):
         str_content = content.decode('utf-8')
@@ -312,20 +310,12 @@ class ASPState:
         soup = self.bs(content);
         return soup
     def post(self, url, data):
+        # Merege hidden fields and the request data
         d2 = self.asp_hidden_inputs.copy()
         d2.update(data)
         data = d2
-        #for k in data:
-        #    if k == '__EVENTTARGET' or k == '__EVENTARGUMENT':
-        #        print(k + "\t" + data[k])
-        #    elif k[0] == '_':
-        #        print(k)
-        #    else:
-        #        print(k + "\t" + data[k])
         resp, content = self.h.request(url, "POST", urlencode(data), headers)
         soup = self.bs(content)
-        #str_content = content.decode('utf-8')
-        #soup = BeautifulSoup(str_content, 'html.parser')
         return soup
 
 url = 'http://webapps.achd.net/Restaurant/RestaurantSearch.aspx'
@@ -366,7 +356,6 @@ def parse_page(soup):
     records = []
     # because nested tables
     for table in soup.find_all('table', id='ctl00_ContentPlaceHolder1_gvFSO'):
-        #print("Table found!")
         # Only the table with the data seems to have an id?
         # Yes, why this and that? -- historical, one works sometimes and
         #      the other doesn't :-\
