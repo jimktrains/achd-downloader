@@ -57,25 +57,30 @@ def extract_record(row):
     #<td align="center" bgcolor="Green"><font color="White">Green</font></td>
     #</tr>
     cells = row.find_all('td')
-    if len(cells) < 1: return
+    try:
+        if "'ctl00$ContentPlaceHolder1$gvFSO','Page$" in str(cells): return
+        if len(cells) < 1: return
 
-    name = cells[0].find_all('a')
-    if len(name) != 2: return
-    name = name[1]
-    name = name.get_text()
+        name = cells[0].find_all('a')
+        if len(name) != 2: return
+        name = name[1]
+        name = name.get_text()
 
-    street_number = cells[1].get_text()
-    street_name = cells[2].get_text()
-    city = cells[3].get_text()
-    zipcode = cells[4].get_text()
+        street_number = cells[1].get_text()
+        street_name = cells[2].get_text()
+        city = cells[3].get_text()
+        zipcode = cells[4].get_text()
 
-    return {
-        'name': name,
-        'street_number': street_number,
-        'street_name': street_name,
-        'city': city,
-        'zipcode': zipcode
-    }
+        return {
+            'name': name,
+            'street_number': street_number,
+            'street_name': street_name,
+            'city': city,
+            'zipcode': zipcode
+        }
+    except:
+        print(cells)
+        return
 
 
 headers = {
@@ -190,39 +195,45 @@ def find_pages(table):
         if 'Page' in page:
             pages.append(page)
     return pages
-with open('places.csv', 'w') as csvfile:
-    fieldnames = ['name', 'street_number', 'street_name', 'city', 'zipcode']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-    writer.writeheader()
+with open('errors.csv', 'w') as errcsvfile:
+    fieldnames = ['muni', 'page']
+    errwriter = csv.DictWriter(errcsvfile, fieldnames=fieldnames)
+    errwriter.writeheader()
+    with open('places.csv', 'w') as csvfile:
+        fieldnames = ['name', 'street_number', 'street_name', 'city', 'zipcode']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
 
-    for muni in munis:
-        form_fields = copy.deepcopy(form_fields_orig)
-        form_fields['ctl00$ContentPlaceHolder1$ddlMuni'] = muni
-        print("Getting muni " + muni);
-        soup = a.post(url, form_fields)
-        pages, records = parse_page(soup)
-        for record in records:
-            writer.writerow(record)
-        # If you don't do this, you will get back the first page
-        del form_fields['ctl00$ContentPlaceHolder1$btnFind']
-
-        for page in pages:
-            print()
-            print("Page:\t" + page)
-            form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
-            form_fields['__EVENTARGUMENT'] = page
+        for muni in munis:
+            form_fields = copy.deepcopy(form_fields_orig)
+            form_fields['ctl00$ContentPlaceHolder1$ddlMuni'] = muni
+            print("=" * 55)
+            print("Getting muni " + muni);
             soup = a.post(url, form_fields)
             pages, records = parse_page(soup)
             if records is not None:
-                print(len(records))
-                print(records[-1])
                 for record in records:
                     writer.writerow(record)
-            else:
-                print("No records returned")
-                continue
-        sys.exit(0)
+                # If you don't do this, you will get back the first page
+                del form_fields['ctl00$ContentPlaceHolder1$btnFind']
 
+                for page in pages:
+                    print()
+                    print("Page:\t" + page)
+                    form_fields['__EVENTTARGET'] = "ctl00$ContentPlaceHolder1$gvFSO"
+                    form_fields['__EVENTARGUMENT'] = page
+                    soup = a.post(url, form_fields)
+                    pages, records = parse_page(soup)
+                    if records is not None:
+                        print(str(len(records)) + "\t" + str(records[-1]))
+                        for record in records:
+                            writer.writerow(record)
+                    else:
+                        print("No records returned")
+                        errwriter.writerow({"muni": muni, "page": page})
+            else:
+                print("Error. No Records Found")
+                errwriter.writerow({"muni": muni, "page": 1})
 
 #######
 # NOTES
